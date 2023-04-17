@@ -9,35 +9,43 @@ delta_t = 0.01
 def phi_r(U):
     # U -> 2-D array
     # Van Leer
+    # U = np.array([[0.0, 0, 0, 0, 1, 1, 1, 1], [0, 0, 0, 0, 1, 1, 1, 1],
+    # [0, 0, 0, 0, 1, 1, 1, 1]])
     r = np.zeros_like(U)
-    start, end = 1, -2
-    r[:, start:end] = (U[:, start:end] - U[:, start - 1:end - 1]) / (
-        U[:, start + 1:end + 1] - U[:, start:end])
+    start, end = 1, -1
+    duj1 = U[:, start + 1:] - U[:, start:end]
+    duj = U[:, start:end] - U[:, start - 1:end - 1]
+    r[:, start:end] = np.divide(duj,
+                                duj1,
+                                out=np.ones_like(duj) * 1000000.0,
+                                where=duj1 != 0)
+    print(r)
     phir = (np.abs(r) + r) / (np.abs(r) + 1)
+    print(phir)
     return phir
 
 
-def Uj12(U):
-    start, end = 0, -2
-    temp = np.zeros_like(U)
+def U12(U):
+    start, end = 0, -1
+    temp = U.copy()
     temp[:, start:end] = U[:, start:end] + phi_r(U)[:, start:end] * (
-        U[:, start + 1:end + 1] - U[:, start:end]) / 2
+        U[:, start + 1:] - U[:, start:end]) / 2
     return temp
 
 
-def Uj_12(U):
-    start, end = 1, -1
-    temp = np.zeros_like(U)
+def U_12(U):
+    start, end = 1, 0
+    temp = U.copy()
     temp[:,
-         start:end] = U[:,
-                        start - 1:end - 1] + phi_r(U)[:, start - 1:end - 1] * (
-                            U[:, start:end] - U[:, start - 1:end - 1]) / 2
+         start:] = U[:, start - 1:end - 1] + phi_r(U)[:, start - 1:end - 1] * (
+             U[:, start:] - U[:, start - 1:end - 1]) / 2
     return temp
 
 
 def p_x(U, delta_x):
     # 二阶TVD
-    pu = (Uj12(U) - Uj_12(U)) / delta_x
+    u_n, u_p = U12(U), U_12(U)
+    pu = (u_n - u_p) / delta_x
     return pu
 
 
@@ -52,12 +60,12 @@ def parf_u(U):
     one = np.ones(shape=(n, ))
     A = np.zeros(shape=(m, 3 * n))
     A[:, 0::3] = np.array([
-        one, (gamma - 3) / 2 * a2 * a2 / a1 / a1,
-        -gamma * a2 * a3 / a1 / a1 + (gamma - 1) * a3 * a3 * a3 / a1 / a1 / a1
+        zero, (gamma - 3) / 2 * a2 * a2 / a1 / a1,
+        -gamma * a2 * a3 / a1 / a1 + (gamma - 1) * a2 * a2 * a2 / a1 / a1 / a1
     ])
     A[:, 1::3] = np.array([
         one, (3 - gamma) * a2 / a1,
-        gamma * a3 / a1 - 3 * (gamma - 1) * a2 * a2 / a1 / a1
+        gamma * a3 / a1 - 3 * (gamma - 1) * a2 * a2 / a1 / a1 / 2
     ])
     A[:, 2::3] = np.array([zero, gamma - one, gamma * a2 / a1])
     return A
@@ -81,33 +89,24 @@ def step_time(U, delta_x, delta_t):
     return U_next
 
 
-# print(u[:, 0::3].shape)
-# a1, a2, a3 = u[0, :], u[1, :], u[2, :]
-# print(np.zeros(shape=(7, )))
-# print(a1 * a1)
-# print(parf_u(u).shape)
-
-# print(parf_u(u))
-
-
 def func_rho(x):
-    temp = x.copy()
-    temp[temp < 0.5] = 1
-    temp[temp >= 0.5] = 0.125
+    temp = np.zeros_like(x)
+    temp[x < 0.5] = 1
+    temp[x >= 0.5] = 0.125
     return temp
 
 
 def func_u(x):
-    temp = x.copy()
-    temp[temp < 0.5] = 0
-    temp[temp >= 0.5] = 0
+    temp = np.zeros_like(x)
+    temp[x < 0.5] = 0
+    temp[x >= 0.5] = 0
     return temp
 
 
 def func_p(x):
-    temp = x.copy()
-    temp[temp < 0.5] = 1
-    temp[temp >= 0.5] = 0.1
+    temp = np.zeros_like(x)
+    temp[x < 0.5] = 1
+    temp[x >= 0.5] = 0.1
     return temp
 
 
@@ -122,6 +121,20 @@ def init():
     return U
 
 
-U = init()
-U_next = step_time(U, delta_x, delta_t)
-print(U_next)
+def update():
+    x = np.linspace(0, 1, 101, endpoint=True)
+    U = init()
+    # U = np.array([np.sin(x + 0.1), np.sin(x), np.sin(x)])
+    U_next = step_time(U, delta_x, delta_t)
+
+    # for _ in range(100):
+    #     U_next = step_time(U_next, delta_x, delta_t)
+    # U_next = step_time(U_next, delta_x, delta_t)
+    print(U_next)
+    plt.plot(x, U[0, :], label='t')
+    plt.plot(x, U_next[0, :], label='tnext')
+    plt.legend()
+    plt.show()
+
+
+update()
