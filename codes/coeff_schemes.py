@@ -72,7 +72,7 @@ if __name__ == '__main__':
     matrix_a, error_coef, matrix_b = calc(m, k, order)
     matrix_a, error_coef, matrix_b = calc(m, k, order)
     order_matrix = set_order(m, 1)
-    taylor_matrix = get_taylor_coef(m)
+    taylor_matrix = get_taylor_coef(m, k)
     matrix_a, error_coef = cal_matrixa(order_matrix, taylor_matrix)
     matrix_b = convert_to_const(matrix_a)
     print(matrix_a)
