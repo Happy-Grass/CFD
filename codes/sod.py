@@ -61,7 +61,7 @@ c_star_r = cal_c(rho_star_r, p_star)
 
 def cal_area2(x, t, c1):
     # 计算膨胀波区 x为array
-    c = (gamma - 1) / (gamma + 1) * (u1 - (x - 0.5) / t) + 2 * c1 / (gamma + 1)
+    c = (gakma - 1) / (gamma + 1) * (u1 - (x - 0.5) / t) + 2 * c1 / (gamma + 1)
     u = c + (x - 0.5) / t
     p = p1 * np.power(c / c1, 2 * gamma / (gamma - 1))
     rho = gamma * p / c / c
